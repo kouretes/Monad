@@ -77,10 +77,13 @@ void ObstacleAvoidance::UserInit() {
 
 int ObstacleAvoidance::Execute() {
 	read_messages();
-	countAge++;	
+	countAge++;
 	//xrhsh gia elegxo ean to array me tis times twn sonars einai 0 = sfalma
 	countLeft=0;
 	countRight=0;
+	
+	
+	
 	double Right[SOnARsNum], Left[SOnARsNum];	
 	
 	//(RobotPositionSensorMessage) find current robot position
@@ -105,6 +108,8 @@ int ObstacleAvoidance::Execute() {
 		}
 		delete rpsm;
 	}
+	
+	
 	//update the grid with the new sonar values
 	if (ussm != 0) {
 		for (int j=SOnARsNum-1;j>=0;j--){
@@ -195,7 +200,7 @@ void ObstacleAvoidance::initGrid(){
 	for(int i=0;i<M;i++)
 		for(int j=0;j<N;j++)
 			PolarGrid[i][j] = NoKnowledge;
-	
+	PolarGrid[3][17] = 1.0;
 	
 	//PolarGrid[3][16]=1.0;
 	
@@ -246,11 +251,32 @@ void ObstacleAvoidance::smoothGrid(int smooth){
 void ObstacleAvoidance::updateGrid(double (&newValues1)[SOnARsNum], double (&newValues2)[SOnARsNum]){//right, left
 	int index, range=2, holdj=0, v=0;
 	double temp[2];
-	
+	mprosta=false;
+	dexia= false;
+	aristera = false;
+	//Gia periptwsh eleipsis empodiou -> meiwsh pi8anothtas yparxis empodiou
+	Logger::Instance().WriteMsg("ObstacleAvoidance", "toofar*sonars " + _toString(TooFar*SOnARsNum) +  " countRight " + _toString(countRight) , Logger::ExtraExtraInfo);
+	Logger::Instance().WriteMsg("ObstacleAvoidance", " countLeft " + _toString(countLeft) , Logger::ExtraExtraInfo);
+	if (countRight >= 19){
+		for(int i=0;i<M;i++){
+			for(int j=FRONT - SonarCellRange -1 ;j<FRONT  ;j++){ //13:16
+				PolarGrid[i][j]=PolarGrid[i][j]*0.9<=0.05?0.0:PolarGrid[i][j]*0.9;
+			}PolarGrid[i][FRONT]=PolarGrid[i][FRONT]*0.9<=0.05?0.0:PolarGrid[i][FRONT]*0.9; //17
+		}
+	}
+	if (countLeft >= 19){
+		for(int i=0;i<M;i++){
+			for(int j=FRONT +1 ;j<FRONT + SonarCellRange -1 +range ;j++){ //18:21
+				PolarGrid[i][j]=PolarGrid[i][j]*0.9<=0.05?0.0:PolarGrid[i][j]*0.9; 
+			}//PolarGrid[i][FRONT]=PolarGrid[i][FRONT]*0.9<=0.05?0.0:PolarGrid[i][FRONT]*0.9; //17
+		}
+	}
 	for(int i=SOnARsNum-1;i>=0;i--){
 		//Logger::Instance().WriteMsg("ObstacleAvoidance", "in_update new1 " + _toString(newValues1[i]) +  " new2 " + _toString(newValues2[i]) , Logger::ExtraExtraInfo);
 		if (newValues1[i] > TooFar && newValues2[i] > TooFar )
 			continue;
+		newValues1[i]  = newValues1[i] == 0.29?0.3:newValues1[i] ;
+		newValues2[i]  = newValues2[i] == 0.29?0.3:newValues2[i] ;
 		if(newValues1[i] == 0.0) continue;
 		temp[0]=(newValues1[i] < TooFar && newValues1[i] > TooClose)?newValues1[i]:0.0; //left
 		for (int l=0;l<10;l++){ //gia na brw an yparxei sto temp[1] timh konta sto temp[0]
@@ -262,13 +288,13 @@ void ObstacleAvoidance::updateGrid(double (&newValues1)[SOnARsNum], double (&new
 					if(temp[k] > 0.0) {  //alliws den mas endiaferei giati einai eite poly makrya eite poly konta
 						index=(temp[k]>=0.3)?(int)(temp[k]/0.1 - 3):0;//(int)(temp[k]/0.1 - 3); //-2 giati den mas endiaferei mexri ta 20 cm
 						for(int j=FRONT - SonarCellRange +1 ;j<FRONT + SonarCellRange -1  ;j++){ //15:19
-							PolarGrid[index][j]=PolarGrid[index][j]*1.1>=1.0?1.0:PolarGrid[index][j]*1.1;
+							PolarGrid[index][j]=(PolarGrid[index][j]==0?0.1:PolarGrid[index][j])*1.1>=1.0?1.0:(PolarGrid[index][j]==0?0.1:PolarGrid[index][j])*1.1;
 							v=0;
 							do{
 								if (index-v>=0)
 									PolarGrid[index-v][j]=PolarGrid[index-v][j]*UsePossibilityDown<=0.0?0.0:PolarGrid[index-v][j]*UsePossibilityDown;
 								if (index+v<M)
-									PolarGrid[index+v][j]=PolarGrid[index+v][j]*UsePossibilityUp>=1.0?1.0:PolarGrid[index+v][j]*UsePossibilityUp;
+									PolarGrid[index+v][j]=(PolarGrid[index+v][j]==0?0.1:PolarGrid[index+v][j])*UsePossibilityUp>=1.0?1.0:(PolarGrid[index+v][j]==0?0.1:PolarGrid[index+v][j])*UsePossibilityUp;
 								v++;
 							}while(index-v >= 0 || index+v < M);
 						}
@@ -301,7 +327,7 @@ void ObstacleAvoidance::updateGrid(double (&newValues1)[SOnARsNum], double (&new
 				///////////////////send message for left or right obstacle angle 30 
 				
 				index=(temp[k]>=0.3)?(int)(temp[k]/0.1 - 3):0;//(int)(temp[k]/0.1 - 3); //-2 giati den mas endiaferei mexri ta 20 cm
-				for(int j=((k==0)?FRONT-SonarCellRange-1:FRONT+SonarCellRange-1);j<((k==0)?(FRONT-SonarCellRange-1+range):(FRONT+SonarCellRange-1+range));j++){			//13 k 19
+				for(int j=((k==0)?FRONT-SonarCellRange-1:FRONT+SonarCellRange-1);j<((k==0)?(FRONT-SonarCellRange-1+range):(FRONT+SonarCellRange-1+range));j++){//13 k 19
 					PolarGrid[index][j]=PolarGrid[index][j]*1.1>=1.0?1.0:PolarGrid[index][j]*1.1;
 					v=0;
 					do{
@@ -325,6 +351,24 @@ void ObstacleAvoidance::updateGrid(double (&newValues1)[SOnARsNum], double (&new
 				}
 			}
 		}
+	}
+	for(int i=0;i<M;i++){
+		mprosta = PolarGrid[i][FRONT] >= 0.8?true:false;
+		mprostaDist = mprosta == true?(i+1):0;
+		mprostaCert = mprosta == true?PolarGrid[i][FRONT]:0;
+		break;
+	}
+	for(int i=0;i<M;i++){
+		dexia = PolarGrid[i][FRONT] >= 0.8?true:false;
+		dexiaDist = dexia == true?(i+1):0;
+		dexiaCert = dexia == true?PolarGrid[i][FRONT]:0;
+		break;
+	}
+	for(int i=0;i<M;i++){
+		aristera = PolarGrid[i][FRONT] >= 0.8?true:false;
+		aristeraDist = aristera == true?(i+1):0;
+		aristeraCert = aristera == true?PolarGrid[i][FRONT]:0;
+		break;
 	}
 	
 	/*for (int i=0;i<SOnARsNum; i++){
@@ -369,8 +413,8 @@ void ObstacleAvoidance::updateGrid(double (&newValues1)[SOnARsNum], double (&new
 			
 		}
 	}*/
-	
-	//drawGrid();
+	printSonarValues();
+	drawGrid();
 
 }
 
@@ -720,7 +764,7 @@ void ObstacleAvoidance::pathPlanningInit(int goalx, int goaly){
 void ObstacleAvoidance::drawGrid(){
 	//int val[M];
 	
-	for (int i=0;i<35;i++){
+	for (int i=11;i<21;i++){
 		Logger::Instance().WriteMsg("ObstacleAvoidance", " " + _toString(i) + " " + _toString(PolarGrid[0][i]) +" | " + _toString(PolarGrid[1][i]) + " | " + _toString(PolarGrid[2][i]) 
 				+ " | " + _toString(PolarGrid[3][i])  + " | " + _toString(PolarGrid[4][i])
 				+ " | " + _toString(PolarGrid[5][i])  + " | " + _toString(PolarGrid[6][i]) , Logger::ExtraExtraInfo);
