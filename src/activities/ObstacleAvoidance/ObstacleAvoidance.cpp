@@ -413,8 +413,8 @@ void ObstacleAvoidance::updateGrid(double (&newValues1)[SOnARsNum], double (&new
 			
 		}
 	}*/
-	printSonarValues();
-	drawGrid();
+	//printSonarValues();
+	//drawGrid();
 
 }
 
