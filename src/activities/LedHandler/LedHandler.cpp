@@ -107,16 +107,10 @@ void LedHandler::setEyesColor(const string& color) {
 
 void LedHandler::setIndividualEyeColor(const string& device, const string& color) {
 	if (device.find("l") != device.npos) {
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsLeftExternal", colors[color], 0.0);
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsLeftInternal", colors[color], 0.0);
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsLeftBottom", colors[color], 0.0);
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsLeftTop", colors[color], 0.0);
+		leds->callVoid<string, int, float> ("fadeRGB", "LeftFaceLeds", colors[color], 0.0);
 
 	} else {
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsRightExternal", colors[color], 0.0);
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsRightInternal", colors[color], 0.0);
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsRightBottom", colors[color], 0.0);
-		leds->callVoid<string, int, float> ("fadeRGB", "FaceLedsRightTop", colors[color], 0.0);
+		leds->callVoid<string, int, float> ("fadeRGB", "RightFaceLeds", colors[color], 0.0);
 	}
 
 }

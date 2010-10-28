@@ -13,7 +13,7 @@
 #include "KLocalization.h"
 #include "Kutils.h"
 
-#include <udt.h>
+#include "PracticalSocket.h"
 #include <string>
 class Localization: public IActivity, public Publisher, public KLocalization {
 
@@ -62,7 +62,7 @@ class Localization: public IActivity, public Publisher, public KLocalization {
 		//For Debug!
 		static void * StartServer(void * kati);
 		pthread_t acceptthread;
-		static UDTSOCKET recver;
+		static TCPSocket *sock;
 
 		int LocalizationData_Load(parts & Particles, vector<KObservationModel> & Observation,KMotionModel & MotionModel );
 		void Send_LocalizationData();

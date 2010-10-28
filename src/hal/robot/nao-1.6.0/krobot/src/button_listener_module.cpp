@@ -43,7 +43,7 @@ ButtonListener::ButtonListener(AL::ALPtr<AL::ALBroker> pbroker, const std::strin
 	//disable default chest button function
 	sentinel->pCall<bool> ("enableDefaultActionSimpleClick", false);
 	//subscribe on chest button pressed
-	memory->subscribeToMicroEvent("ChestButtonPressed", getName(),"","buttonPressed");
+	memory->subscribeToEvent("ChestButtonPressed", getName(),"buttonPressed");
 	memory->subscribeToMicroEvent("LeftBumperPressed", getName(),"","LBumperPressed");
 	memory->subscribeToMicroEvent("RightBumperPressed", getName(),"","RBumperPressed");
 
